@@ -2,6 +2,7 @@ package deep
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 // Neural is a neural network
@@ -15,6 +16,8 @@ type Neural struct {
 type Config struct {
 	// Number of inputs
 	Inputs int
+	// Rand generator
+	Randg *rand.Rand
 	// Defines topology:
 	// For instance, [5 3 3] signifies a network with two hidden layers
 	// containing 5 and 3 nodes respectively, followed an output layer
@@ -36,7 +39,7 @@ type Config struct {
 func NewNeural(c *Config) *Neural {
 
 	if c.Weight == nil {
-		c.Weight = NewUniform(0.5, 0)
+		c.Weight = NewUniform(0.5, 0, c.Randg)
 	}
 	if c.Activation == ActivationNone {
 		c.Activation = ActivationSigmoid

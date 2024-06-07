@@ -127,14 +127,8 @@ func (t *BatchTrainer) Train(n *deep.Neural, examples, validation Examples, iter
 }
 
 // LocalTrain trains n locally in a client
-func (t *BatchTrainer) LocalTrain(n *deep.Neural, ep int, b, validation Examples, i, k int) *deep.Dump {
+func (t *BatchTrainer) LocalTrain(n *deep.Neural, ep int, b Examples) *deep.Dump {
 	t.internalb = newBatchTraining(n.Layers, t.parallelism)
-
-	//train := make(Examples, len(examples))
-	//copy(train, examples)
-	//if ep == 0 {
-	//	fmt.Println(n.Dump().Weights)
-	//}
 
 	workCh := make(chan Example, t.parallelism)
 	nets := make([]*deep.Neural, t.parallelism)
@@ -156,14 +150,6 @@ func (t *BatchTrainer) LocalTrain(n *deep.Neural, ep int, b, validation Examples
 	t.printer.Init(n)
 	t.solver.Init(n.NumWeights())
 
-	//ts := time.Now()
-	//for it := 1; it <= iterations; it++ {
-
-	//train.Shuffle()
-	//batches := train.SplitSize(t.batchSize)
-	//batches = batches[:numBatch]
-
-	//for _, b := range batches {
 	currentWeights := n.Weights()
 	for _, n := range nets {
 		n.ApplyWeights(currentWeights)
@@ -188,16 +174,8 @@ func (t *BatchTrainer) LocalTrain(n *deep.Neural, ep int, b, validation Examples
 			}
 		}
 	}
-	//fmt.Println(t.accumulatedDeltas, ep, i, k)
-	//fmt.Println(n.Dump().Weights, "before", ep, i, k)
 	t.update(n, ep)
-	//fmt.Println(n.Dump().Weights, "after", ep, i, k)
-	//}
 
-	//if t.verbosity > 0 && it%t.verbosity == 0 && len(validation) > 0 {
-	//t.printer.PrintProgress(n, validation, time.Since(ts), ep)
-	//}
-	//}
 	return n.Dump()
 }
 

@@ -86,33 +86,22 @@ func main() {
 		for i := 0; i < batchNum; i++ {
 			wg := new(sync.WaitGroup)
 			wg.Add(N)
-			//for l, layer := range initDump.Weights {
-			//	for n, neuron := range layer {
-			//		for w := range neuron {
-			//			initDump.Weights[l][n][w] = 0.0
-			//		}
-			//	}
-			//}
-			ZeroWeights(initDump)
-			//fmt.Println(initDump.Weights)
+			deep.ZeroWeights(initDump)
 			for k := 0; k < N; k++ {
 				go func(k int, i int) {
 					defer wg.Done()
 					localNeurals[k] = deep.FromDump(neural.Dump())
-					dump := trainers[k].LocalTrain(localNeurals[k], e, batches[k][i], test, i, k)
+					dump := trainers[k].LocalTrain(localNeurals[k], e, batches[k][i])
 					mu.Lock()
-					initDump = AddWeights(initDump, dump)
-					//fmt.Println(initDump.Weights)
+					initDump = deep.AddWeights(initDump, dump)
 					mu.Unlock()
 				}(k, i)
 			}
 			wg.Wait()
-			FractionWeights(initDump, float64(N))
-			//fmt.Println(initDump.Weights)
+			deep.FractionWeights(initDump, float64(N))
 			neural = deep.FromDump(initDump)
 		}
 		PrintProgress(neural, test, time.Since(ts), e)
-		//fmt.Println(initDump.Weights)
 	}
 }
 
@@ -161,58 +150,6 @@ func onehot(classes int, val float64) []float64 {
 	res := make([]float64, classes)
 	res[int(val)] = 1
 	return res
-}
-
-// ZeroWeights sets all weights in the Dump struct to zero
-func ZeroWeights(dump *deep.Dump) {
-	for l, layer := range dump.Weights {
-		for n, neuron := range layer {
-			for w := range neuron {
-				dump.Weights[l][n][w] = 0.0
-			}
-		}
-	}
-}
-
-// FractionWeights sets all weights in the Dump struct to zero
-func FractionWeights(dump *deep.Dump, fraction float64) {
-	for l, layer := range dump.Weights {
-		for n, neuron := range layer {
-			for w := range neuron {
-				dump.Weights[l][n][w] /= fraction
-			}
-		}
-	}
-}
-
-// AddWeights adds the weights of two Dump structs and stores the result in a third Dump struct
-func AddWeights(dump1, dump2 *deep.Dump) *deep.Dump {
-	if len(dump1.Weights) != len(dump2.Weights) {
-		panic("The structures of the two Dump objects do not match")
-	}
-
-	result := deep.Dump{
-		Config:  dump1.Config, // Assuming same configuration for both
-		Weights: make([][][]float64, len(dump1.Weights)),
-	}
-
-	for l := range dump1.Weights {
-		if len(dump1.Weights[l]) != len(dump2.Weights[l]) {
-			panic("The structures of the two Dump objects do not match")
-		}
-		result.Weights[l] = make([][]float64, len(dump1.Weights[l]))
-		for n := range dump1.Weights[l] {
-			if len(dump1.Weights[l][n]) != len(dump2.Weights[l][n]) {
-				panic("The structures of the two Dump objects do not match")
-			}
-			result.Weights[l][n] = make([]float64, len(dump1.Weights[l][n]))
-			for w := range dump1.Weights[l][n] {
-				result.Weights[l][n][w] = dump1.Weights[l][n][w] + dump2.Weights[l][n][w]
-			}
-		}
-	}
-
-	return &result
 }
 
 func crossValidate(n *deep.Neural, validation training.Examples) float64 {
